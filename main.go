@@ -5,10 +5,14 @@ import (
 	"log"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/gdamore/tcell/v2"
 )
+
+type gameSession = struct {
+	gameType       int
+	gameDifficulty int
+}
 
 func main() {
 	logFile, err := os.OpenFile("debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
@@ -32,6 +36,11 @@ func main() {
 	defStyle := tcell.StyleDefault.Background(tcell.ColorReset).Foreground(tcell.ColorReset)
 	screen.SetStyle(defStyle)
 	screen.Clear()
+
+	currSession := gameSession{
+		gameDifficulty: -1,
+		gameType:       -1,
+	}
 
 	menuOptions := []string{
 		"1: Individual word mode",
@@ -65,6 +74,11 @@ func main() {
 					selectedOption++
 				}
 			case tcell.KeyEnter:
+				if currSession.gameDifficulty == -1 {
+					currSession.gameDifficulty = selectedOption
+				} else {
+					currSession.gameType = selectedOption
+				}
 				handleOption(screen, selectedOption)
 				if selectedOption == len(menuOptions)-1 { // Exit option
 					return
@@ -108,11 +122,14 @@ func handleOption(screen tcell.Screen, option int) {
 			"2. Medium: Top Thousand English words",
 			"3. Hard: Top Ten Thousand English words",
 		}
-		symp := option == 0
-		log.Println(symp, "on line 109")
-		displayMenu(screen, "Choose your difficulty", options, 0)
+		displayMenu(screen, "Choose your difficulty for the individual mode", options, 0)
 	case 1:
-		showMessage(screen, fmt.Sprintf("Current Time: %v", time.Now()))
+		options := []string{
+			"1. Easy: Top Hundred English words",
+			"2. Medium: Top Thousand English words",
+			"3. Hard: Top Ten Thousand English words",
+		}
+		displayMenu(screen, "Choose your difficulty for the paragraph mode", options, 0)
 	case 2:
 		showMessage(screen, "Exiting...")
 	}
