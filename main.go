@@ -1,13 +1,25 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"os"
 	"strings"
+	"time"
 
 	"github.com/gdamore/tcell/v2"
 )
 
 func main() {
+	logFile, err := os.OpenFile("debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		fmt.Printf("Failed to open log file: %v\n", err)
+		return
+	}
+	defer logFile.Close()
+	log.SetOutput(logFile)
+
+	log.Println("Starting program")
 	screen, err := tcell.NewScreen()
 	if err != nil {
 		log.Fatalf("%+v", err)
@@ -21,78 +33,103 @@ func main() {
 	screen.SetStyle(defStyle)
 	screen.Clear()
 
-	homeScreenText := `package main
+	menuOptions := []string{
+		"1: Individual word mode",
+		"2: Paragraph mode",
+		"3: Exit",
+	}
 
-import (
-  "fmt"
-  "net/http"
-  "time"
-)
+	// exitInstructions := "Press Escape or Ctrl + C to exit anytime"
 
-func greet(w http.ResponseWriter, r *http.Request) {
-  fmt.Fprintf(w, "Hello World! %s", time.Now())
-}
+	selectedOption := 0
 
-func main() {
-  http.HandleFunc("/", greet)
-  http.ListenAndServe(":8080", nil)
-}`
+	displayMenu(screen, "Welcome to not-my-type for practicing your poor typing skills", menuOptions, selectedOption)
 
-	// Function to display the text
-	displayText(screen, homeScreenText, defStyle)
+	// showInstructions(screen, exitInstructions)
 
-	// Show the screen
-	screen.Show()
-
-	// Display exit instructions
-	displayInstructions(screen, homeScreenText)
-
-	// Wait for a key press before exiting
 	for {
 		ev := screen.PollEvent()
 		switch ev := ev.(type) {
 		case *tcell.EventResize:
 			screen.Sync()
 		case *tcell.EventKey:
-			if ev.Key() == tcell.KeyEscape || ev.Key() == tcell.KeyCtrlC {
+			switch ev.Key() {
+			case tcell.KeyEscape, tcell.KeyCtrlC:
 				return
+			case tcell.KeyUp:
+				if selectedOption > 0 {
+					selectedOption--
+				}
+			case tcell.KeyDown:
+				if selectedOption < len(menuOptions)-1 {
+					selectedOption++
+				}
+			case tcell.KeyEnter:
+				handleOption(screen, selectedOption)
+				if selectedOption == len(menuOptions)-1 { // Exit option
+					return
+				}
+				continue
 			}
+			displayMenu(screen, "Welcome to not-my-type for practicing your poor typing skills", menuOptions, selectedOption)
 		}
 	}
 }
 
-// displayText displays the given text on the screen starting at the top-left corner
-func displayText(screen tcell.Screen, text string, style tcell.Style) {
-	lines := splitLines(text)
-	for y, line := range lines {
-		for x, r := range line {
-			screen.SetContent(x, y, r, nil, style)
-		}
-	}
-}
+func displayMenu(screen tcell.Screen, menuTitle string, menuOptions []string, selectedOption int) {
+	log.Println(menuOptions)
+	screen.Clear()
+	yOffset := 0
 
-// displayInstructions displays instructions on how to exit the program
-func displayInstructions(screen tcell.Screen, screenText string) {
-	instructions := "Press ESC or Ctrl+C to exit"
-	y := strings.Count(screenText, "\n")
-	for i, r := range instructions {
-		screen.SetContent(i, y+3, r, nil, tcell.StyleDefault.Foreground(tcell.ColorYellow))
+	for i, item := range menuTitle {
+		screen.SetContent(i, yOffset, item, nil, tcell.StyleDefault.Background(tcell.ColorDefault).Foreground(tcell.ColorDefault))
+	}
+	yOffset = strings.Count(menuTitle, "\n") + 2
+	for i, option := range menuOptions {
+		style := tcell.StyleDefault
+		item := option
+		if i == selectedOption {
+			style = style.Background(tcell.ColorWhite).Foreground(tcell.ColorBlack).Underline(true)
+			item += "  <-"
+		}
+		for j, r := range item {
+			screen.SetContent(j, i+yOffset, r, nil, style)
+		}
 	}
 	screen.Show()
 }
 
-// splitLines splits a string into lines
-func splitLines(text string) []string {
-	lines := []string{}
-	line := ""
-	for _, r := range text {
-		if r == '\n' {
-			lines = append(lines, line)
-			line = ""
-		} else {
-			line += string(r)
+func handleOption(screen tcell.Screen, option int) {
+	screen.Clear()
+	switch option {
+	case 0:
+		options := []string{
+			"1. Easy: Top Hundred English words",
+			"2. Medium: Top Thousand English words",
+			"3. Hard: Top Ten Thousand English words",
 		}
+		symp := option == 0
+		log.Println(symp, "on line 109")
+		displayMenu(screen, "Choose your difficulty", options, 0)
+	case 1:
+		showMessage(screen, fmt.Sprintf("Current Time: %v", time.Now()))
+	case 2:
+		showMessage(screen, "Exiting...")
 	}
-	lines = append(lines, line) // Append the last line
-	return lines
+}
+
+func showMessage(screen tcell.Screen, message string) {
+	for i, r := range message {
+		screen.SetContent(i, 0, r, nil, tcell.StyleDefault)
+	}
+	screen.Show()
+}
+
+func showInstructions(screen tcell.Screen, text string) {
+	_, y := screen.Size()
+
+	for i, item := range text {
+		screen.SetContent(i, y-10, item, nil, tcell.StyleDefault.Foreground(tcell.ColorYellow))
+	}
+	screen.Show()
 }
