@@ -48,6 +48,12 @@ func main() {
 		"3: Exit",
 	}
 
+	difficultyOptions := []string{
+		"1. Easy: Top Hundred English words",
+		"2. Medium: Top Thousand English words",
+		"3. Hard: Top Ten Thousand English words",
+	}
+
 	// exitInstructions := "Press Escape or Ctrl + C to exit anytime"
 
 	selectedOption := 0
@@ -69,23 +75,42 @@ func main() {
 				if selectedOption > 0 {
 					selectedOption--
 				}
+				if currSession.gameType == -1 {
+					displayMenu(screen, "Welcome to not-my-type for practicing your poor typing skills", menuOptions, selectedOption)
+				} else {
+					displayMenu(screen, "These are the difficulties, choose how you want to lose", difficultyOptions, selectedOption)
+				}
 			case tcell.KeyDown:
 				if selectedOption < len(menuOptions)-1 {
 					selectedOption++
 				}
+				if currSession.gameType == -1 {
+					displayMenu(screen, "Welcome to not-my-type for practicing your poor typing skills", menuOptions, selectedOption)
+				} else {
+					displayMenu(screen, "These are the difficulties, choose how you want to lose", difficultyOptions, selectedOption)
+				}
+
+			case tcell.KeyBackspace:
+				if currSession.gameDifficulty > -1 {
+					currSession.gameDifficulty = -1
+				} else {
+					currSession.gameType = -1
+				}
 			case tcell.KeyEnter:
 				if currSession.gameDifficulty == -1 {
 					currSession.gameDifficulty = selectedOption
+					// TODO: Start game with gameDifficulty and of gameType
 				} else {
 					currSession.gameType = selectedOption
+					displayMenu(screen, "These are the difficulties, choose how you want to lose", difficultyOptions, selectedOption)
 				}
 				handleOption(screen, selectedOption)
 				if selectedOption == len(menuOptions)-1 { // Exit option
 					return
 				}
+				selectedOption = 0
 				continue
 			}
-			displayMenu(screen, "Welcome to not-my-type for practicing your poor typing skills", menuOptions, selectedOption)
 		}
 	}
 }
@@ -147,6 +172,15 @@ func showInstructions(screen tcell.Screen, text string) {
 
 	for i, item := range text {
 		screen.SetContent(i, y-10, item, nil, tcell.StyleDefault.Foreground(tcell.ColorYellow))
+	}
+	screen.Show()
+}
+
+func showGameScreen(screen tcell.Screen, text string) {
+	screen.Clear()
+
+	for i, item := range text {
+		screen.SetContent(i, 0, item, nil, tcell.StyleDefault.Foreground(tcell.ColorDefault))
 	}
 	screen.Show()
 }
