@@ -10,13 +10,14 @@ import (
 )
 
 type GameSession struct {
-	GameType       int
-	GameDifficulty int
-	HasGameStarted bool
-	CurrentWord    string
-	UserInput      string
-	WordList       []string
-	WordIndex      int
+	GameType         int
+	GameDifficulty   int
+	HasGameStarted   bool
+	HasGameCompleted bool
+	CurrentWord      string
+	UserInput        string
+	WordList         []string
+	WordIndex        int
 }
 
 const (
@@ -115,10 +116,8 @@ func handleMenuInput(screen tcell.Screen, ev *tcell.EventKey, session *GameSessi
 	case tcell.KeyBackspace:
 		if session.GameDifficulty > -1 {
 			session.GameDifficulty = -1
-			displayMenu(screen, MenuDifficultyTitle, difficultyOptions, selectedOption)
 		} else {
 			session.GameType = -1
-			displayMenu(screen, MenuMainTitle, mainMenuOptions, selectedOption)
 		}
 	case tcell.KeyEnter:
 		handleMenuSelection(screen, session, selectedOption)
@@ -151,6 +150,10 @@ func startGame(screen tcell.Screen, session *GameSession) {
 }
 
 func updateMenuDisplay(screen tcell.Screen, session *GameSession, selectedOption *int) {
+	if session.HasGameCompleted {
+		displayMenu(screen, "Congratulations! You completed the game. Press Enter to return to the main menu.", []string{}, selectedOption)
+		return
+	}
 	if session.GameType == -1 {
 		displayMenu(screen, MenuMainTitle, mainMenuOptions, selectedOption)
 	} else {
@@ -161,13 +164,13 @@ func updateMenuDisplay(screen tcell.Screen, session *GameSession, selectedOption
 func displayMenu(screen tcell.Screen, menuTitle string, menuOptions []string, selectedOption *int) {
 	screen.Clear()
 	yOffset := 0
+	log.Println(menuTitle)
 
 	// Display menu title
 	for i, r := range menuTitle {
 		screen.SetContent(i, yOffset, r, nil, tcell.StyleDefault)
 	}
 	yOffset = strings.Count(menuTitle, "\n") + 2
-
 	// Display menu options
 	for i, option := range menuOptions {
 		style := tcell.StyleDefault
@@ -202,8 +205,8 @@ func handleGameInput(screen tcell.Screen, ev *tcell.EventKey, session *GameSessi
 				session.UserInput = ""
 				showGameScreen(screen, session.CurrentWord)
 			} else {
-				session.HasGameStarted = false
-				displayMenu(screen, "Congratulations! You completed the game. Press Enter to return to the main menu.", []string{}, nil)
+				session.HasGameCompleted = true
+				return 0
 			}
 		}
 	case tcell.KeyBackspace2:
@@ -214,7 +217,11 @@ func handleGameInput(screen tcell.Screen, ev *tcell.EventKey, session *GameSessi
 		return -1
 	}
 	// Optionally show the current user input on the screen
-	showGameScreen(screen, session.CurrentWord+"\n"+session.UserInput)
+	if session.HasGameCompleted {
+		displayMenu(screen, "Congratulations! You completed the game. Press Enter to return to the main menu.", []string{}, nil)
+	} else {
+		showGameScreen(screen, session.CurrentWord+"\n"+session.UserInput)
+	}
 	return 0
 }
 
