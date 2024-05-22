@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"os"
@@ -226,16 +227,29 @@ func handleGameInput(screen tcell.Screen, ev *tcell.EventKey, session *GameSessi
 }
 
 func getWords(difficulty int) []string {
+	var fileName string
 	switch difficulty {
 	case 0:
-		return []string{"the", "be", "to", "of", "and"}
+		fileName = "topHundred.txt"
 	case 1:
-		return []string{"subsequent", "amazing", "impressive", "challenging", "development"}
+		fileName = "topThousand.txt"
 	case 2:
-		return []string{"unbelievable", "extraordinary", "remarkable", "magnificent", "breathtaking"}
+		fileName = "topTenThousand.txt"
 	default:
 		return []string{}
 	}
+	file, err := os.Open(fmt.Sprintf("./lessons/%v", fileName))
+	if err != nil {
+		log.Println("something went wrong while opening the files")
+		return []string{}
+	}
+	defer file.Close()
+	var words []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		words = append(words, scanner.Text())
+	}
+	return words[:10]
 }
 
 func min(a, b int) int {
