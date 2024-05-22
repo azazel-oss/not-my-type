@@ -22,3 +22,5 @@ go.work
 
 # Log files
 *.log
+
+not-my-type
