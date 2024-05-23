@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"strings"
 
@@ -145,7 +146,13 @@ func startGame(session *GameSession) {
 	session.HasGameStarted = true
 	session.WordList = getWords(session.GameDifficulty)
 	session.WordIndex = 0
-	session.CurrentWord = session.WordList[session.WordIndex]
+	if session.GameType == 0 {
+		session.CurrentWord = session.WordList[session.WordIndex]
+	}
+	if session.GameType == 1 {
+		wordString := strings.Join(session.WordList, " ")
+		session.CurrentWord = wordString
+	}
 	session.UserInput = ""
 }
 
@@ -215,16 +222,26 @@ func handleGameInput(screen tcell.Screen, ev *tcell.EventKey, session *GameSessi
 	switch ev.Key() {
 	case tcell.KeyRune:
 		session.UserInput += string(ev.Rune())
-		if session.UserInput == session.CurrentWord+" " {
-			session.WordIndex++
-			if session.WordIndex < len(session.WordList) {
-				session.CurrentWord = session.WordList[session.WordIndex]
-				session.UserInput = ""
-				showGameScreen(screen, session.CurrentWord, "")
-			} else {
+		switch session.GameType {
+		case 0:
+			if session.UserInput == session.CurrentWord+" " {
+				session.WordIndex++
+				if session.WordIndex < len(session.WordList) {
+					session.CurrentWord = session.WordList[session.WordIndex]
+					session.UserInput = ""
+					showGameScreen(screen, session.CurrentWord, "")
+				} else {
+					session.HasGameCompleted = true
+					return 0
+				}
+			}
+		case 1:
+			if session.CurrentWord+" " == session.UserInput {
 				session.HasGameCompleted = true
 				return 0
 			}
+		default:
+			return -1
 		}
 	case tcell.KeyBackspace2:
 		if len(session.UserInput) > 0 {
@@ -244,28 +261,38 @@ func handleGameInput(screen tcell.Screen, ev *tcell.EventKey, session *GameSessi
 
 func getWords(difficulty int) []string {
 	var fileName string
-	switch difficulty {
-	case 0:
-		fileName = "topHundred.txt"
-	case 1:
-		fileName = "topThousand.txt"
-	case 2:
-		fileName = "topTenThousand.txt"
-	default:
+	difficultyFiles := map[int]string{
+		0: "topHundred.txt",
+		1: "topThousand.txt",
+		2: "topTenThousand.txt",
+	}
+
+	fileName, ok := difficultyFiles[difficulty]
+	if !ok {
+		log.Println("Invalid difficulty level")
 		return []string{}
 	}
+
 	file, err := os.Open(fmt.Sprintf("./lessons/%v", fileName))
 	if err != nil {
 		log.Println("something went wrong while opening the files")
 		return []string{}
 	}
+
 	defer file.Close()
+
 	var words []string
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		words = append(words, scanner.Text())
 	}
-	return words[:10]
+
+	var result []string
+	for i := 0; i < 10; i++ {
+		num := rand.Intn(len(words))
+		result = append(result, words[num])
+	}
+	return result
 }
 
 func min(a, b int) int {
