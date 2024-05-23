@@ -137,17 +137,16 @@ func handleMenuSelection(screen tcell.Screen, session *GameSession, selectedOpti
 		displayMenu(screen, MenuDifficultyTitle, difficultyOptions, selectedOption)
 	} else {
 		session.GameDifficulty = *selectedOption
-		startGame(screen, session)
+		startGame(session)
 	}
 }
 
-func startGame(screen tcell.Screen, session *GameSession) {
+func startGame(session *GameSession) {
 	session.HasGameStarted = true
 	session.WordList = getWords(session.GameDifficulty)
 	session.WordIndex = 0
 	session.CurrentWord = session.WordList[session.WordIndex]
 	session.UserInput = ""
-	log.Println("Hello asad so long seeing you here")
 }
 
 func updateMenuDisplay(screen tcell.Screen, session *GameSession, selectedOption *int) {
