@@ -147,7 +147,7 @@ func startGame(screen tcell.Screen, session *GameSession) {
 	session.WordIndex = 0
 	session.CurrentWord = session.WordList[session.WordIndex]
 	session.UserInput = ""
-	showGameScreen(screen, session.CurrentWord)
+	showGameScreen(screen, session.CurrentWord, "")
 }
 
 func updateMenuDisplay(screen tcell.Screen, session *GameSession, selectedOption *int) {
@@ -187,10 +187,24 @@ func displayMenu(screen tcell.Screen, menuTitle string, menuOptions []string, se
 	screen.Show()
 }
 
-func showGameScreen(screen tcell.Screen, text string) {
+func showGameScreen(screen tcell.Screen, currentWord string, userInput string) {
 	screen.Clear()
-	for i, r := range text {
+	for i, r := range currentWord {
 		screen.SetContent(i, 0, r, nil, tcell.StyleDefault)
+	}
+
+	for i, r := range "Press space to submit word" {
+		screen.SetContent(i, 1, r, nil, tcell.StyleDefault)
+	}
+
+	var userInputStyle tcell.Style
+
+	for i, r := range userInput {
+		if i >= len(currentWord) || r != rune(currentWord[i]) {
+			screen.SetContent(i, 4, r, nil, userInputStyle.Background(tcell.ColorRed).Foreground(tcell.ColorWhite))
+		} else {
+			screen.SetContent(i, 4, r, nil, userInputStyle.Background(tcell.ColorGreen).Foreground(tcell.ColorBlack))
+		}
 	}
 	screen.Show()
 }
@@ -199,12 +213,12 @@ func handleGameInput(screen tcell.Screen, ev *tcell.EventKey, session *GameSessi
 	switch ev.Key() {
 	case tcell.KeyRune:
 		session.UserInput += string(ev.Rune())
-		if session.UserInput == session.CurrentWord {
+		if session.UserInput == session.CurrentWord+" " {
 			session.WordIndex++
 			if session.WordIndex < len(session.WordList) {
 				session.CurrentWord = session.WordList[session.WordIndex]
 				session.UserInput = ""
-				showGameScreen(screen, session.CurrentWord)
+				showGameScreen(screen, session.CurrentWord, "")
 			} else {
 				session.HasGameCompleted = true
 				return 0
@@ -221,7 +235,7 @@ func handleGameInput(screen tcell.Screen, ev *tcell.EventKey, session *GameSessi
 	if session.HasGameCompleted {
 		displayMenu(screen, "Congratulations! You completed the game. Press Enter to return to the main menu.", []string{}, nil)
 	} else {
-		showGameScreen(screen, session.CurrentWord+"\n"+session.UserInput)
+		showGameScreen(screen, session.CurrentWord, session.UserInput)
 	}
 	return 0
 }
