@@ -11,14 +11,14 @@ import (
 )
 
 type GameSession struct {
-	GameType         int
-	GameDifficulty   int
-	HasGameStarted   bool
-	HasGameCompleted bool
 	CurrentWord      string
 	UserInput        string
 	WordList         []string
 	WordIndex        int
+	GameType         int
+	GameDifficulty   int
+	HasGameStarted   bool
+	HasGameCompleted bool
 }
 
 const (
@@ -147,12 +147,16 @@ func startGame(screen tcell.Screen, session *GameSession) {
 	session.WordIndex = 0
 	session.CurrentWord = session.WordList[session.WordIndex]
 	session.UserInput = ""
-	showGameScreen(screen, session.CurrentWord, "")
+	log.Println("Hello asad so long seeing you here")
 }
 
 func updateMenuDisplay(screen tcell.Screen, session *GameSession, selectedOption *int) {
 	if session.HasGameCompleted {
 		displayMenu(screen, "Congratulations! You completed the game. Press Enter to return to the main menu.", []string{}, selectedOption)
+		return
+	}
+	if session.HasGameStarted {
+		showGameScreen(screen, session.CurrentWord, "")
 		return
 	}
 	if session.GameType == -1 {
@@ -198,7 +202,6 @@ func showGameScreen(screen tcell.Screen, currentWord string, userInput string) {
 	}
 
 	var userInputStyle tcell.Style
-
 	for i, r := range userInput {
 		if i >= len(currentWord) || r != rune(currentWord[i]) {
 			screen.SetContent(i, 4, r, nil, userInputStyle.Background(tcell.ColorRed).Foreground(tcell.ColorWhite))
