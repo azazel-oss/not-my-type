@@ -53,7 +53,6 @@ func main() {
 
 	selection := 0
 	pSelection := &selection
-
 	displayMenu(screen, MenuMainTitle, mainMenuOptions, pSelection)
 
 	for {
@@ -122,24 +121,39 @@ func handleMenuInput(screen tcell.Screen, ev *tcell.EventKey, session *GameSessi
 			session.GameType = -1
 		}
 	case tcell.KeyEnter:
-		handleMenuSelection(screen, session, selectedOption)
+		if session.HasGameCompleted {
+			session.GameDifficulty = -1
+			session.GameType = -1
+			session.UserInput = ""
+			session.CurrentWord = ""
+			session.HasGameStarted = false
+			session.HasGameCompleted = false
+			session.WordList = []string{}
+		} else {
+			code := handleMenuSelection(screen, session, selectedOption)
+			if code == -1 {
+				return -1
+			}
+		}
 	}
 	updateMenuDisplay(screen, session, selectedOption)
 	return 0
 }
 
-func handleMenuSelection(screen tcell.Screen, session *GameSession, selectedOption *int) {
+func handleMenuSelection(screen tcell.Screen, session *GameSession, selectedOption *int) int {
 	if session.GameType == -1 {
 		if *selectedOption == len(mainMenuOptions)-1 { // Exit option
-			os.Exit(0)
+			return -1
 		}
 		session.GameType = *selectedOption
 		*selectedOption = 0
 		displayMenu(screen, MenuDifficultyTitle, difficultyOptions, selectedOption)
 	} else {
+		*selectedOption = 0
 		session.GameDifficulty = *selectedOption
 		startGame(session)
 	}
+	return 0
 }
 
 func startGame(session *GameSession) {
@@ -186,7 +200,13 @@ func displayMenu(screen tcell.Screen, menuTitle string, menuOptions []string, se
 	for i, option := range menuOptions {
 		style := tcell.StyleDefault
 		item := option
-		if i == *selectedOption {
+		var target int
+		if selectedOption == nil {
+			target = 0
+		} else {
+			target = *selectedOption
+		}
+		if i == target {
 			style = style.Background(tcell.ColorWhite).Foreground(tcell.ColorBlack).Underline(true)
 			item += "  <-"
 		}
@@ -249,7 +269,21 @@ func handleGameInput(screen tcell.Screen, ev *tcell.EventKey, session *GameSessi
 		}
 	case tcell.KeyCtrlC:
 		return -1
+
+	case tcell.KeyEnter:
+		if session.HasGameCompleted {
+			session.GameDifficulty = -1
+			session.GameType = -1
+			session.UserInput = ""
+			session.CurrentWord = ""
+			session.HasGameStarted = false
+			session.HasGameCompleted = false
+			session.WordList = []string{}
+		}
+		displayMenu(screen, MenuMainTitle, mainMenuOptions, nil)
+		return 0
 	}
+
 	// Optionally show the current user input on the screen
 	if session.HasGameCompleted {
 		displayMenu(screen, "Congratulations! You completed the game. Press Enter to return to the main menu.", []string{}, nil)
