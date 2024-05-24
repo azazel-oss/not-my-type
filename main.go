@@ -252,13 +252,11 @@ func handleGameInput(screen tcell.Screen, ev *tcell.EventKey, session *GameSessi
 					showGameScreen(screen, session.CurrentWord, "")
 				} else {
 					session.HasGameCompleted = true
-					return 0
 				}
 			}
 		case 1:
 			if session.CurrentWord+" " == session.UserInput {
 				session.HasGameCompleted = true
-				return 0
 			}
 		default:
 			return -1
@@ -279,9 +277,9 @@ func handleGameInput(screen tcell.Screen, ev *tcell.EventKey, session *GameSessi
 			session.HasGameStarted = false
 			session.HasGameCompleted = false
 			session.WordList = []string{}
+			displayMenu(screen, MenuMainTitle, mainMenuOptions, nil)
+			return 0
 		}
-		displayMenu(screen, MenuMainTitle, mainMenuOptions, nil)
-		return 0
 	}
 
 	// Optionally show the current user input on the screen
